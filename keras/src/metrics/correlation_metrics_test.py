@@ -36,6 +36,37 @@ class CorrelationsTest(testing.TestCase):
         )
         self.assertAllClose(result, pcc_expected)
 
+    def test_pearson_zero_variance(self):
+        """Test that zero-variance inputs do not produce NaN values."""
+        # y_true is constant (zero variance)
+        y_true_const = np.array([[1.0, 1.0, 1.0]], dtype="float32")
+        y_pred = np.array([[0.1, 0.5, 0.9]], dtype="float32")
+        res1 = correlation_metrics.pearson_correlation(
+            y_true_const, y_pred, axis=-1
+        )
+        self.assertFalse(np.isnan(np.array(res1)).any())
+        self.assertAllClose(res1, [0.0])
+
+        # y_pred is constant (zero variance)
+        res2 = correlation_metrics.pearson_correlation(
+            y_pred, y_true_const, axis=-1
+        )
+        self.assertFalse(np.isnan(np.array(res2)).any())
+        self.assertAllClose(res2, [0.0])
+
+        # Both are constant
+        res3 = correlation_metrics.pearson_correlation(
+            y_true_const, y_true_const, axis=-1
+        )
+        self.assertFalse(np.isnan(np.array(res3)).any())
+        self.assertAllClose(res3, [0.0])
+
+        # Metric class with constant batch
+        m = PearsonCorrelation(axis=-1, dtype="float32")
+        m.update_state(y_true_const, y_pred)
+        self.assertFalse(np.isnan(float(m.result())))
+        self.assertAllClose(m.result(), 0.0)
+
     def test_concordance_function(self):
         """Test the functional API for Concordance Correlation Coefficient."""
         y_true, y_pred, ccc_expected, _ = self._get_data()

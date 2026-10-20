@@ -27,7 +27,7 @@ def pearson_correlation(y_true, y_pred, axis=-1):
 
     >>> y_true = [[0, 1, 0.5], [1, 1, 0.2]]
     >>> y_pred = [[0.1, 0.9, 0.5], [1, 0.9, 0.2]]
-    >>> loss = keras.losses.concordance_correlation(
+    >>> pcc = keras.metrics.pearson_correlation(
     ...     y_true, y_pred, axis=-1
     ... ).numpy()
     [1.         0.99339927]
@@ -39,8 +39,15 @@ def pearson_correlation(y_true, y_pred, axis=-1):
     y_true_norm = y_true - ops.mean(y_true, axis=axis, keepdims=True)
     y_pred_norm = y_pred - ops.mean(y_pred, axis=axis, keepdims=True)
 
-    y_true_norm = y_true_norm / ops.std(y_true_norm, axis=axis, keepdims=True)
-    y_pred_norm = y_pred_norm / ops.std(y_pred_norm, axis=axis, keepdims=True)
+    y_true_std = ops.maximum(
+        ops.std(y_true_norm, axis=axis, keepdims=True), backend.epsilon()
+    )
+    y_pred_std = ops.maximum(
+        ops.std(y_pred_norm, axis=axis, keepdims=True), backend.epsilon()
+    )
+
+    y_true_norm = y_true_norm / y_true_std
+    y_pred_norm = y_pred_norm / y_pred_std
 
     return ops.mean(y_true_norm * y_pred_norm, axis=axis)
 
